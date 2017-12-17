@@ -1,7 +1,6 @@
 package main
 
 import (
-	translator ".."
 	"flag"
 	"fmt"
 	"github.com/insomniacslk/azuretranslator"

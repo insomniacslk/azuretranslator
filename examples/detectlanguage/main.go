@@ -3,7 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/insomniacslk/azuretranslator"
+	//"github.com/insomniacslk/azuretranslator"
+	azuretranslator "../.."
 	"os"
 	"sync"
 )
@@ -31,11 +32,11 @@ func main() {
 		wg.Add(1)
 		go func(phrase string) {
 			defer wg.Done()
-			lang, err := c.Detect(phrase)
+			trans, err := c.Translate(phrase, "en", "")
 			if err != nil {
 				panic(err)
 			}
-			fmt.Printf("%v -> %v\n", phrase, lang)
+			fmt.Printf("'%v' -> '%v'\n", phrase, trans)
 		}(phrase)
 	}
 	wg.Wait()

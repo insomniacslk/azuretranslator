@@ -10,14 +10,20 @@ import (
 )
 
 const (
-	TOKEN_API     = "https://api.cognitive.microsoft.com/sts/v1.0/issueToken"
-	TRANSLATE_API = "https://api.microsofttranslator.com/v2/Http.svc/Translate"
-	DETECT_API    = "https://api.microsofttranslator.com/v2/Http.svc/Detect"
+	API_HOST       = "api.microsofttranslator.com"
+	TOKEN_API      = "https://api.cognitive.microsoft.com/sts/v1.0/issueToken"
+	TRANSLATE_PATH = "/v2/Http.svc/Translate"
+	DETECT_PATH    = "/v2/Http.svc/Detect"
 )
 
 type DetectResponse struct {
 	XMLName  xml.Name `xml:"string"`
 	Language string   `xml:",chardata"`
+}
+
+type TranslateResponse struct {
+	XMLName     xml.Name `xml:"string"`
+	Translation string   `xml:",chardata"`
 }
 
 type TranslatorClient struct {
@@ -84,8 +90,15 @@ func (c *TranslatorClient) getToken(apiKey string) ([]byte, error) {
 }
 
 func (c *TranslatorClient) Detect(text string) (string, error) {
-	uri := fmt.Sprintf("%v?text=%v", DETECT_API, url.QueryEscape(text))
-	resp, err := c.request("GET", uri, nil)
+	values := url.Values{}
+	values.Add("text", text)
+	uri := url.URL{
+		Scheme:   "https",
+		Host:     API_HOST,
+		Path:     DETECT_PATH,
+		RawQuery: values.Encode(),
+	}
+	resp, err := c.request("GET", uri.String(), nil)
 	if err != nil {
 		return "", err
 	}
@@ -95,4 +108,29 @@ func (c *TranslatorClient) Detect(text string) (string, error) {
 		return "", err
 	}
 	return ret.Language, nil
+}
+
+func (c *TranslatorClient) Translate(text, to, from string) (string, error) {
+	values := url.Values{}
+	values.Add("text", text)
+	values.Add("to", to)
+	if from != "" {
+		values.Add("from", from)
+	}
+	uri := url.URL{
+		Scheme:   "https",
+		Host:     API_HOST,
+		Path:     TRANSLATE_PATH,
+		RawQuery: values.Encode(),
+	}
+	resp, err := c.request("GET", uri.String(), nil)
+	if err != nil {
+		return "", err
+	}
+	var ret TranslateResponse
+	err = xml.Unmarshal(resp, &ret)
+	if err != nil {
+		return "", err
+	}
+	return ret.Translation, nil
 }

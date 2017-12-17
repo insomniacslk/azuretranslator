@@ -10,10 +10,11 @@ import (
 )
 
 const (
-	API_HOST       = "api.microsofttranslator.com"
-	TOKEN_API      = "https://api.cognitive.microsoft.com/sts/v1.0/issueToken"
-	TRANSLATE_PATH = "/v2/Http.svc/Translate"
-	DETECT_PATH    = "/v2/Http.svc/Detect"
+	API_HOST             = "api.microsofttranslator.com"
+	TOKEN_API            = "https://api.cognitive.microsoft.com/sts/v1.0/issueToken"
+	TRANSLATE_PATH       = "/v2/Http.svc/Translate"
+	DETECT_PATH          = "/v2/Http.svc/Detect"
+	DEFAULT_HTTP_TIMEOUT = 10 * time.Second
 )
 
 type DetectResponse struct {
@@ -30,6 +31,7 @@ type TranslatorClient struct {
 	SessionToken []byte
 	HttpClient   *http.Client
 	Transport    *http.Transport
+	Timeout      time.Duration
 }
 
 func NewTranslatorClient(apiKey string) (*TranslatorClient, error) {
@@ -61,7 +63,13 @@ func (c *TranslatorClient) request(reqType, endpoint string, overrideHeaders map
 		headers["Authorization"] = fmt.Sprintf("Bearer %v", string(c.SessionToken))
 	}
 	if c.HttpClient == nil {
-		c.HttpClient = &http.Client{Transport: c.Transport}
+		c.HttpClient = &http.Client{
+			Transport: c.Transport,
+			Timeout:   c.Timeout,
+		}
+		if c.HttpClient.Timeout == 0 {
+			c.HttpClient.Timeout = DEFAULT_HTTP_TIMEOUT
+		}
 	}
 	req, err := http.NewRequest(reqType, endpoint, nil)
 	if err != nil {

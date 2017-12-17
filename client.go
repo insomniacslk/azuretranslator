@@ -71,7 +71,13 @@ func (c *TranslatorClient) request(reqType, endpoint string, overrideHeaders map
 		req.Header.Add(k, v)
 	}
 	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
 	defer resp.Body.Close()
+	if resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("%v", resp.Status)
+	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
